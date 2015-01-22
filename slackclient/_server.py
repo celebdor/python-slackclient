@@ -1,9 +1,10 @@
-from _slackrequest import SlackRequest
-from _channel import Channel
-from _util import SearchList
+from ._slackrequest import SlackRequest
+from ._channel import Channel
+from ._util import SearchList
 
 from websocket import create_connection
 import json
+
 
 class Server(object):
     def __init__(self, token, connect=True):
@@ -20,25 +21,28 @@ class Server(object):
 
         if connect:
             self.rtm_connect()
+
     def __eq__(self, compare_str):
         if compare_str == self.domain or compare_str == self.token:
             return True
         else:
             return False
+
     def __str__(self):
         data = ""
         for key in self.__dict__.keys():
             data += "{} : {}\n".format(key, str(self.__dict__[key])[:40])
         return data
+
     def __repr__(self):
         return self.__str__()
 
     def rtm_connect(self):
         reply = self.api_requester.do(self.token, "rtm.start")
-        if reply.code != 200:
+        if reply.status_code != 200:
             raise SlackConnectionError
         else:
-            reply = json.loads(reply.read())
+            reply = json.loads(reply.text)
             if reply["ok"]:
                 self.parse_slack_login_data(reply)
             else:
@@ -86,14 +90,17 @@ class Server(object):
         self.channels.append(Channel(self, name, id, members))
 
     def join_channel(self, name):
-        print self.api_requester.do(self.token, "channels.join?name={}".format(name)).read()
+        print(self.api_requester.do(
+            self.token, "channels.join?name={}".format(name)).text)
 
     def api_call(self, method, **kwargs):
         reply = self.api_requester.do(self.token, method, kwargs)
-        return reply.read()
+        return reply.text
+
 
 class SlackConnectionError(Exception):
     pass
+
 
 class SlackLoginError(Exception):
     pass
